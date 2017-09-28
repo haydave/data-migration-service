@@ -1,0 +1,23 @@
+{
+  "name": "data-migration-service",
+  "version": "0.0.1",
+  "description": "This service will provide an API for extracting data from AS MS SQL backup file",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mssql",
+    "data",
+    "migration",
+    "service",
+    "xml",
+    "import"
+  ],
+  "author": "David Hayriyan",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.0",
+    "mssql": "^4.0.4"
+  }
+}
