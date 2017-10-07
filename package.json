@@ -12,12 +12,15 @@
     "migration",
     "service",
     "xml",
-    "import"
+    "import",
+    "excel"
   ],
   "author": "David Hayriyan",
   "license": "MIT",
   "dependencies": {
     "express": "^4.16.0",
-    "mssql": "^4.0.4"
+    "formidable": "^1.1.1",
+    "shortid": "^2.2.8",
+    "tedious": "^2.0.0"
   }
 }
