@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const Connection = require('tedious').Connection;
 const Request = require('tedious').Request;
-const shortid = require('shortid');
+const uniqid = require('uniqid');
 const formidable = require('formidable');
 const extract = require('extract-zip')
 const fs = require('fs');
@@ -10,13 +10,22 @@ const path = require('path');
 
 app.use(express.static('./'));
 
-var config = {
+const config = {
   userName: 'SA',
   password: '!HimnarK2RDP#',
   server: 'localhost'
 }
 
 var connection = new Connection(config);
+var isConnected = false;
+connection.on('connect', function(err) {
+  console.log("asdasdsadsad")
+  if (err) {
+    console.log(err);
+  } else {
+    isConnected = true;
+  }
+});
 
 app.get('/', (req, res) => {
   res.sendFile('index.html');
@@ -24,7 +33,7 @@ app.get('/', (req, res) => {
 
 app.post('/upload', (req, res) => {
   var form = new formidable.IncomingForm();
-  var dbName = shortid.generate();
+  const dbName = uniqid.time();
   let uploadDir = __dirname + '/uploads/' + dbName + '/';
   form.uploadDir = uploadDir;
   form.maxFieldsSize = 30 * 1024 * 1024;
@@ -40,19 +49,13 @@ app.post('/upload', (req, res) => {
           } else {
             let files = fs.readdirSync(uploadDir);
             for (let i in files) {
-               if (path.extname(files[i]) === '.bak') {
-                 let backupDBName = files[i].split(' ')[0]; // assume that extracted archive contains correct db name
-                 console.log(backupDBName, dbName, uploadDir + files[i], uploadDir);
-                 connection.on('connect', function(err) {
-                   if (err) {
-                     console.log(err);
-                   } else {
-                     //runDBssssStatement(backupDBName, dbName, uploadDir + files[i], uploadDir);
-                     runDBStatement("CREATE", dbName);
-                     //runDBStatement("DELETE", dbName);
-                   }
-                 });
-               }
+              if (path.extname(files[i]) === '.bak') {
+                var bakFilepath = uploadDir + files[i];
+                if (isConnected) {
+                  restoreDatabase('Salary', dbName, bakFilepath, uploadDir); // We shoudl be sure that all databases of AS have Salay name
+                }
+                break;
+              }
             }
           }
         });
@@ -70,28 +73,27 @@ app.listen(3000, () => {
 // Utilities                                  //
 // TODO: Move into another js file            //
 ////////////////////////////////////////////////
-let runDBStatement = (option, dbName) => {
-  var request = new Request(option + ' DATABASE ' + dbName, (err) => {
+var runDBStatement = (option, dbName) => {
+  let request = new Request(option + ' DATABASE ' + dbName, (err) => {
     if (err) {
       console.log(err);
-    } else {
-      connection.close();
     }
   });
   connection.execSql(request);
 }
 
-// let runDBssssStatement = (backupDBName, dbName, bakFile, uploadDir) => {
-//   var request = new Request("RESTORE DATABASE YourDBName " +
-//   "FROM DISK='"+bakFile+"' " +
-//   "WITH MOVE '"+backupDBName+"' TO '" + uploadDir + backupDBName + ".mdf', " +
-//   "MOVE '"+backupDBName+"_log' TO '" + uploadDir + backupDBName + ".ldf'", (err) => {
-//     if (err) {
-//       console.log(err);
-//     } else {
-//       connection.close();
-//       console.log(rowCount + ' rows');
-//     }
-//   });
-//   connection.execSql(request);
-// }
+var restoreDatabase = (logicalName, dbName, bakFile, uploadDir) => {
+  fs.chmodSync(uploadDir, '777'); // hope that this is the temprorary solution, mssql should have write access to uploadDir
+  let sql = "RESTORE DATABASE " + dbName + " " +
+    "FROM DISK='" + bakFile + "' " +
+    "WITH MOVE '" + logicalName + "' TO '" + uploadDir + dbName + ".mdf', " +
+    "MOVE '" + logicalName + "_log' TO '" + uploadDir + dbName + ".ldf'";
+  let request = new Request(sql, (err, rowCount, rows) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(rowCount + ' rows');
+    }
+  });
+  connection.execSql(request);
+}
