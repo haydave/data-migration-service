@@ -22,10 +22,13 @@
     "extract-zip": "^1.6.5",
     "formidable": "^1.1.1",
     "tedious": "^2.0.0",
-    "uniqid": "^4.1.1"
+    "uniqid": "^4.1.1",
+    "xmlbuilder": "^9.0.4"
   },
   "nodemonConfig": {
-    "ignore": ["uploads/*"],
+    "ignore": [
+      "uploads/*"
+    ],
     "delay": "2500"
   }
 }
